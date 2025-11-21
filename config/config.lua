@@ -39,37 +39,34 @@ Config.Vehicle = {
     fuel = 100 -- Essence du véhicule (si vous utilisez un script de carburant)
 }
 
--- Configuration des drogues
-Config.Drugs = {
+-- Configuration des missions (types de drogues)
+Config.Missions = {
     {
         name = 'weed',
         label = 'Cannabis',
-        description = 'Livraison de cannabis de haute qualité',
-        rewardPerUnit = 30, -- Prix par unité
-        minAmount = 10, -- Quantité minimum
-        maxAmount = 500, -- Quantité maximum
+        description = 'Livraison de cannabis. Mission facile, récompense correcte.',
+        reward = 5000, -- Récompense fixe pour cette mission
         icon = '🌿',
-        color = '#2ecc71' -- Couleur pour l'UI
+        color = '#2ecc71', -- Couleur pour l'UI
+        difficulty = 'Facile'
     },
     {
         name = 'cocaine',
         label = 'Cocaïne',
-        description = 'Livraison de cocaïne pure à haut risque',
-        rewardPerUnit = 50,
-        minAmount = 10,
-        maxAmount = 500,
+        description = 'Livraison de cocaïne. Mission risquée, bonne récompense.',
+        reward = 10000, -- Récompense fixe
         icon = '❄️',
-        color = '#ecf0f1'
+        color = '#ecf0f1',
+        difficulty = 'Moyen'
     },
     {
         name = 'meth',
         label = 'Méthamphétamine',
-        description = 'Livraison de méthamphétamine cristallisée',
-        rewardPerUnit = 60,
-        minAmount = 10,
-        maxAmount = 500,
+        description = 'Livraison de meth. Mission très risquée, haute récompense.',
+        reward = 15000, -- Récompense fixe
         icon = '💎',
-        color = '#3498db'
+        color = '#3498db',
+        difficulty = 'Difficile'
     }
 }
 
@@ -104,9 +101,6 @@ Config.Delivery = {
 
 -- Système de récompense
 Config.RewardType = 'money' -- Type de monnaie (money, black_money, etc.)
-
--- Item du sac go-fast
-Config.GofastBagItem = 'gofast_bag' -- Nom de l'item du sac
 
 -- Notifications ox_lib
 Config.NotifyPosition = 'top' -- Position des notifications (top, top-right, top-left, bottom, bottom-right, bottom-left)

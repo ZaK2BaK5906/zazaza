@@ -9,31 +9,8 @@ local playerCooldowns = {}
 print('^2========================================^7')
 print('^2[GOFAST]^7 ' .. T.welcome)
 print('^2[GOFAST]^7 Version: 1.0.0')
-print('^2[GOFAST]^7 Drogues configurées: ' .. #Config.Drugs)
+print('^2[GOFAST]^7 Missions disponibles: ' .. #Config.Missions)
 print('^2========================================^7')
-
--- =====================================================
--- HOOK OX_INVENTORY POUR LE SAC GO-FAST
--- =====================================================
-
-local hookId = exports.ox_inventory:registerHook('createItem', function(payload)
-    if payload.item.name == Config.GofastBagItem then
-        local metadata = payload.metadata or {}
-        metadata.label = 'Sac Go-Fast'
-        metadata.description = string.format(
-            "Drogue: %s\nQuantité: %d\nS/N: %d",
-            metadata.drugLabel or T.unknown_drug,
-            metadata.amount or 0,
-            metadata.sn or 0
-        )
-        return metadata
-    end
-end, {
-    print = false,
-    itemFilter = {
-        [Config.GofastBagItem] = true
-    }
-})
 
 -- =====================================================
 -- FONCTIONS UTILITAIRES
@@ -45,10 +22,10 @@ function Debug(msg)
     end
 end
 
-function GetDrugByName(drugName)
-    for _, drug in ipairs(Config.Drugs) do
-        if drug.name == drugName then
-            return drug
+function GetMissionByName(missionName)
+    for _, mission in ipairs(Config.Missions) do
+        if mission.name == missionName then
+            return mission
         end
     end
     return nil
@@ -67,33 +44,6 @@ end
 -- =====================================================
 -- CALLBACKS ESX
 -- =====================================================
-
--- Callback pour récupérer la liste des drogues disponibles
-ESX.RegisterServerCallback('gofast:getDrugList', function(source, cb)
-    local availableDrugs = {}
-
-    for _, drug in ipairs(Config.Drugs) do
-        local count = exports.ox_inventory:GetItem(source, drug.name, nil, true)
-
-        if count and count >= drug.minAmount then
-            local drugInfo = {
-                name = drug.name,
-                label = drug.label,
-                description = drug.description,
-                rewardPerUnit = drug.rewardPerUnit,
-                minAmount = drug.minAmount,
-                maxAmount = drug.maxAmount,
-                playerAmount = count,
-                icon = drug.icon,
-                color = drug.color
-            }
-            table.insert(availableDrugs, drugInfo)
-        end
-    end
-
-    Debug('Liste de drogues pour ' .. source .. ': ' .. #availableDrugs .. ' disponibles')
-    cb(availableDrugs)
-end)
 
 -- Callback pour vérifier le nombre de policiers
 ESX.RegisterServerCallback('gofast:getMinPolice', function(source, cb)
@@ -117,7 +67,7 @@ end)
 
 -- Event pour démarrer une mission
 RegisterNetEvent('gofast:startMission')
-AddEventHandler('gofast:startMission', function(drugName, amount)
+AddEventHandler('gofast:startMission', function(missionName)
     local _source = source
     local xPlayer = ESX.GetPlayerFromId(_source)
 
@@ -164,101 +114,38 @@ AddEventHandler('gofast:startMission', function(drugName, amount)
         return
     end
 
-    -- Récupérer les infos de la drogue
-    local drugType = GetDrugByName(drugName)
-    if not drugType then
-        Debug('Drogue invalide: ' .. tostring(drugName))
+    -- Récupérer les infos de la mission
+    local missionType = GetMissionByName(missionName)
+    if not missionType then
+        Debug('Mission invalide: ' .. tostring(missionName))
         return
     end
 
-    -- Vérifier que le joueur a la drogue
-    local count = exports.ox_inventory:GetItem(_source, drugType.name, nil, true)
-    if not count or count < amount then
-        TriggerClientEvent('ox_lib:notify', _source, {
-            title = T.gofast_title,
-            description = T.not_enough_drugs,
-            type = 'error',
-            duration = 5000,
-            position = Config.NotifyPosition
-        })
-        return
-    end
-
-    -- Vérifier les limites
-    if amount < drugType.minAmount or amount > drugType.maxAmount then
-        TriggerClientEvent('ox_lib:notify', _source, {
-            title = T.gofast_title,
-            description = string.format(T.invalid_quantity_range, drugType.minAmount, drugType.maxAmount),
-            type = 'error',
-            duration = 5000,
-            position = Config.NotifyPosition
-        })
-        return
-    end
-
-    -- Retirer la drogue
-    local removed = exports.ox_inventory:RemoveItem(_source, drugType.name, amount)
-    if not removed then
-        TriggerClientEvent('ox_lib:notify', _source, {
-            title = T.gofast_title,
-            description = T.drug_removal_error,
-            type = 'error',
-            duration = 5000,
-            position = Config.NotifyPosition
-        })
-        return
-    end
-
-    -- Créer le sac go-fast
-    local totalReward = amount * drugType.rewardPerUnit
+    -- Créer la plaque
     local plate = Config.Vehicle.platePrefix .. math.random(1000, 9999)
-    local sn = math.random(100000, 999999)
 
-    local metadata = {
-        drugType = drugType.name,
-        drugLabel = drugType.label,
-        amount = amount,
-        sn = sn
+    -- Enregistrer la mission
+    activeMissions[_source] = {
+        missionType = missionType,
+        reward = missionType.reward,
+        startTime = os.time(),
+        plate = plate
     }
 
-    local success = exports.ox_inventory:AddItem(_source, Config.GofastBagItem, 1, metadata)
+    Debug(string.format('Mission démarrée: %s | Mission: %s | Récompense: $%d',
+        xPlayer.getName(), missionType.label, missionType.reward))
 
-    if success then
-        -- Enregistrer la mission
-        activeMissions[_source] = {
-            drugType = drugType,
-            amount = amount,
-            reward = totalReward,
-            startTime = os.time(),
-            plate = plate,
-            sn = sn
-        }
+    -- Envoyer au client
+    TriggerClientEvent('gofast:startMission', _source, missionType, plate)
 
-        Debug(string.format('Mission démarrée: %s | Drogue: %s x%d | Récompense: $%d',
-            xPlayer.getName(), drugType.label, amount, totalReward))
-
-        -- Envoyer au client
-        TriggerClientEvent('gofast:startMission', _source, drugType, amount, plate)
-
-        -- Mettre à jour les cooldowns
-        lastGlobalGoFast = currentTime
-        playerCooldowns[_source] = currentTime
-    else
-        -- Rembourser si échec
-        exports.ox_inventory:AddItem(_source, drugType.name, amount)
-        TriggerClientEvent('ox_lib:notify', _source, {
-            title = T.gofast_title,
-            description = T.gofast_bag_creation_error,
-            type = 'error',
-            duration = 5000,
-            position = Config.NotifyPosition
-        })
-    end
+    -- Mettre à jour les cooldowns
+    lastGlobalGoFast = currentTime
+    playerCooldowns[_source] = currentTime
 end)
 
 -- Event pour compléter une livraison
 RegisterNetEvent('gofast:completeDelivery')
-AddEventHandler('gofast:completeDelivery', function(drugName, amount)
+AddEventHandler('gofast:completeDelivery', function()
     local _source = source
     local xPlayer = ESX.GetPlayerFromId(_source)
 
@@ -275,71 +162,16 @@ AddEventHandler('gofast:completeDelivery', function(drugName, amount)
 
     local mission = activeMissions[_source]
 
-    -- Vérifier correspondance
-    if mission.drugType.name ~= drugName or mission.amount ~= amount then
-        Debug('Données de mission non correspondantes pour: ' .. xPlayer.getName())
-        TriggerClientEvent('gofast:missionCancelled', _source, T.mission_completion_error)
-        activeMissions[_source] = nil
-        return
-    end
-
-    -- Récupérer l'inventaire et chercher le sac
-    local inventory = exports.ox_inventory:GetInventory(_source)
-    local gofast_bag = nil
-
-    if inventory and inventory.items then
-        for _, item in pairs(inventory.items) do
-            if item.name == Config.GofastBagItem then
-                gofast_bag = item
-                break
-            end
-        end
-    end
-
-    -- Vérifier le sac
-    if not gofast_bag or not gofast_bag.metadata then
-        TriggerClientEvent('ox_lib:notify', _source, {
-            title = T.gofast_title,
-            description = T.gofast_bag_not_found,
-            type = 'error',
-            duration = 5000,
-            position = Config.NotifyPosition
-        })
-        return
-    end
-
-    -- Vérifier métadata du sac
-    if gofast_bag.metadata.drugType ~= drugName or gofast_bag.metadata.amount ~= amount then
-        Debug('Métadata du sac invalide pour: ' .. xPlayer.getName())
-        TriggerClientEvent('gofast:missionCancelled', _source, T.mission_completion_error)
-        activeMissions[_source] = nil
-        return
-    end
-
-    -- Retirer le sac
-    local removed = exports.ox_inventory:RemoveItem(_source, Config.GofastBagItem, 1)
-    if not removed then
-        TriggerClientEvent('ox_lib:notify', _source, {
-            title = T.gofast_title,
-            description = T.gofast_bag_removal_error,
-            type = 'error',
-            duration = 5000,
-            position = Config.NotifyPosition
-        })
-        return
-    end
-
     -- Donner la récompense
     local reward = mission.reward
-    exports.ox_inventory:AddItem(_source, Config.RewardType, reward)
+    xPlayer.addMoney(reward)
 
     -- Log
     local deliveryTime = os.time() - mission.startTime
     local logMessage = string.format(
-        '%s a livré %s x%d pour $%d (temps: %ds)',
+        '%s a livré %s pour $%d (temps: %ds)',
         xPlayer.getName(),
-        mission.drugType.label,
-        amount,
+        mission.missionType.label,
         reward,
         deliveryTime
     )
@@ -433,11 +265,10 @@ RegisterCommand('gofastmissions', function(source, args, rawCommand)
             local player = ESX.GetPlayerFromId(playerId)
             if player then
                 print(string.format(
-                    '^2[%d]^7 %s - %s x%d - $%d - %ds',
+                    '^2[%d]^7 %s - %s - $%d - %ds',
                     playerId,
                     player.getName(),
-                    mission.drugType.label,
-                    mission.amount,
+                    mission.missionType.label,
                     mission.reward,
                     os.time() - mission.startTime
                 ))

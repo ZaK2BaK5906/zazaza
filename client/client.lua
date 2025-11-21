@@ -116,41 +116,28 @@ function CheckPoliceAndShowMenu()
 end
 
 function CheckDrugsAndShowMenu()
-    ESX.TriggerServerCallback('gofast:getDrugList', function(availableDrugs)
-        if #availableDrugs == 0 then
-            Notify(T.gofast_title, T.no_drugs_available, 'error')
-            return
-        end
-
-        OpenDrugMenu(availableDrugs)
-    end)
+    -- Pas besoin de callback serveur, on affiche directement les missions
+    OpenMissionMenu()
 end
 
 -- =====================================================
 -- UI PERSONNALISÉ
 -- =====================================================
 
-function OpenDrugMenu(availableDrugs)
-    Debug('Ouverture du menu avec ' .. #availableDrugs .. ' drogues')
+function OpenMissionMenu()
+    Debug('Ouverture du menu des missions')
 
-    -- Préparer les données pour l'UI
-    local drugsData = {}
-    for i, drug in ipairs(availableDrugs) do
-        table.insert(drugsData, {
-            name = drug.name,
-            label = drug.label,
-            description = string.format('%s | Min: %s | Max: %s | Dispo: %s',
-                drug.description,
-                drug.minAmount,
-                math.min(drug.maxAmount, drug.playerAmount),
-                drug.playerAmount
-            ),
-            rewardPerUnit = drug.rewardPerUnit,
-            minAmount = drug.minAmount,
-            maxAmount = drug.maxAmount,
-            playerAmount = drug.playerAmount,
-            icon = drug.icon,
-            color = drug.color
+    -- Préparer les données pour l'UI directement depuis la config
+    local missionsData = {}
+    for i, mission in ipairs(Config.Missions) do
+        table.insert(missionsData, {
+            name = mission.name,
+            label = mission.label,
+            description = mission.description,
+            reward = mission.reward,
+            icon = mission.icon,
+            color = mission.color,
+            difficulty = mission.difficulty
         })
     end
 
@@ -158,42 +145,24 @@ function OpenDrugMenu(availableDrugs)
     SetNuiFocus(true, true)
     SendNUIMessage({
         type = 'openMenu',
-        drugs = drugsData
+        missions = missionsData
     })
 end
 
--- Callback pour la sélection de drogue
-RegisterNUICallback('selectDrug', function(data, cb)
+-- Callback pour la sélection de mission
+RegisterNUICallback('selectMission', function(data, cb)
     SetNuiFocus(false, false)
 
-    local drugData = data.drug
-    if not drugData then
+    local missionData = data.mission
+    if not missionData then
         cb('error')
         return
     end
 
-    Debug('Drogue sélectionnée: ' .. drugData.name)
+    Debug('Mission sélectionnée: ' .. missionData.name .. ' - Récompense: $' .. missionData.reward)
 
-    -- Demander la quantité
-    local input = lib.inputDialog(string.format('%s %s', T.quantity_label, drugData.label), {
-        {
-            type = 'number',
-            label = T.quantity_label,
-            description = string.format(T.min_max_quantity_description, drugData.minAmount, math.min(drugData.maxAmount, drugData.playerAmount)),
-            required = true,
-            min = drugData.minAmount,
-            max = math.min(drugData.maxAmount, drugData.playerAmount)
-        }
-    })
-
-    if input and input[1] then
-        local amount = math.floor(input[1])
-        if amount >= drugData.minAmount and amount <= math.min(drugData.maxAmount, drugData.playerAmount) then
-            TriggerServerEvent('gofast:startMission', drugData.name, amount)
-        else
-            Notify(T.gofast_title, string.format(T.invalid_quantity_range, drugData.minAmount, math.min(drugData.maxAmount, drugData.playerAmount)), 'error')
-        end
-    end
+    -- Envoyer directement au serveur sans demander de quantité
+    TriggerServerEvent('gofast:startMission', missionData.name)
 
     cb('ok')
 end)
@@ -208,17 +177,16 @@ end)
 -- =====================================================
 
 RegisterNetEvent('gofast:startMission')
-AddEventHandler('gofast:startMission', function(drugType, amount, plate)
+AddEventHandler('gofast:startMission', function(missionType, plate)
     if isOnMission then
         return
     end
 
-    Debug('Mission démarrée: ' .. drugType.name .. ' x' .. amount)
+    Debug('Mission démarrée: ' .. missionType.name .. ' - Récompense: $' .. missionType.reward)
 
     isOnMission = true
     currentMission = {
-        drugType = drugType,
-        amount = amount,
+        missionType = missionType,
         plate = plate
     }
 
@@ -374,7 +342,7 @@ end
 function CompleteDelivery()
     Debug('Livraison complétée')
 
-    TriggerServerEvent('gofast:completeDelivery', currentMission.drugType.name, currentMission.amount)
+    TriggerServerEvent('gofast:completeDelivery')
 
     -- Supprimer le véhicule
     if DoesEntityExist(missionVehicle) then

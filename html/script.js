@@ -1,5 +1,5 @@
 // Variables globales
-let drugsData = [];
+let missionsData = [];
 let isVisible = false;
 
 // Initialisation
@@ -32,7 +32,7 @@ window.addEventListener('message', (event) => {
 
     switch (data.type) {
         case 'openMenu':
-            openMenu(data.drugs);
+            openMenu(data.missions);
             break;
         case 'closeMenu':
             closeMenu();
@@ -41,17 +41,17 @@ window.addEventListener('message', (event) => {
 });
 
 // Ouvrir le menu
-function openMenu(drugs) {
+function openMenu(missions) {
     if (isVisible) return;
 
-    drugsData = drugs;
+    missionsData = missions;
     isVisible = true;
 
     const app = document.getElementById('app');
     app.classList.remove('hidden');
 
-    // Générer les cartes de drogues
-    generateDrugCards();
+    // Générer les cartes de missions
+    generateMissionCards();
 
     // Animation d'entrée
     setTimeout(() => {
@@ -86,7 +86,7 @@ function closeMenu() {
         isVisible = false;
 
         // Nettoyer
-        drugsData = [];
+        missionsData = [];
         document.getElementById('drugsGrid').innerHTML = '';
 
         // Envoyer au client
@@ -100,46 +100,46 @@ function closeMenu() {
     }, 300);
 }
 
-// Générer les cartes de drogues
-function generateDrugCards() {
+// Générer les cartes de missions
+function generateMissionCards() {
     const grid = document.getElementById('drugsGrid');
     grid.innerHTML = '';
 
-    drugsData.forEach((drug, index) => {
-        const card = createDrugCard(drug, index);
+    missionsData.forEach((mission, index) => {
+        const card = createMissionCard(mission, index);
         grid.appendChild(card);
     });
 }
 
-// Créer une carte de drogue
-function createDrugCard(drug, index) {
+// Créer une carte de mission
+function createMissionCard(mission, index) {
     const card = document.createElement('div');
     card.className = 'drug-card';
-    card.setAttribute('data-color', drug.color);
-    card.style.setProperty('--drug-color', drug.color);
-    card.style.setProperty('--drug-color-alpha', hexToRgba(drug.color, 0.3));
+    card.setAttribute('data-color', mission.color);
+    card.style.setProperty('--drug-color', mission.color);
+    card.style.setProperty('--drug-color-alpha', hexToRgba(mission.color, 0.3));
 
     card.innerHTML = `
         <div class="drug-header">
-            <div class="drug-icon">${drug.icon}</div>
+            <div class="drug-icon">${mission.icon}</div>
             <div class="drug-title">
-                <h3>${drug.label}</h3>
-                <span class="drug-badge" style="background: ${drug.color}20; color: ${drug.color};">
-                    Mission
+                <h3>${mission.label}</h3>
+                <span class="drug-badge" style="background: ${mission.color}20; color: ${mission.color};">
+                    ${mission.difficulty}
                 </span>
             </div>
         </div>
         <div class="drug-description">
-            ${drug.description}
+            ${mission.description}
         </div>
         <div class="drug-price">
-            <span class="price-label">Récompense / unité</span>
-            <span class="price-value">${formatNumber(drug.rewardPerUnit)}</span>
+            <span class="price-label">Récompense</span>
+            <span class="price-value">${formatNumber(mission.reward)}</span>
         </div>
     `;
 
     // Event listener pour la sélection
-    card.addEventListener('click', () => selectDrug(index, card));
+    card.addEventListener('click', () => selectMission(index, card));
 
     // Effet hover sonore (optionnel)
     card.addEventListener('mouseenter', () => {
@@ -149,8 +149,8 @@ function createDrugCard(drug, index) {
     return card;
 }
 
-// Sélectionner une drogue
-function selectDrug(index, cardElement) {
+// Sélectionner une mission
+function selectMission(index, cardElement) {
     // Effet visuel de sélection
     cardElement.classList.add('selecting');
 
@@ -159,14 +159,14 @@ function selectDrug(index, cardElement) {
 
     // Attendre l'animation avant de fermer
     setTimeout(() => {
-        // Envoyer au client avec toutes les données
-        fetch(`https://${GetParentResourceName()}/selectDrug`, {
+        // Envoyer au client avec toutes les données de la mission
+        fetch(`https://${GetParentResourceName()}/selectMission`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                drug: drugsData[index] // Envoyer toutes les données de la drogue
+                mission: missionsData[index] // Envoyer toutes les données de la mission
             })
         }).then(() => {
             closeMenu();
