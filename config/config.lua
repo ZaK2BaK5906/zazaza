@@ -88,9 +88,7 @@ Config.DeliveryPoints = {
 -- Configuration de la livraison
 Config.Delivery = {
     radius = 5.0, -- Rayon pour valider la livraison (en mètres)
-    markerType = 1, -- Type de marker (1 = cylinder)
-    markerSize = vector3(3.0, 3.0, 1.0), -- Taille du marker
-    markerColor = {r = 46, g = 204, b = 113, a = 100}, -- Couleur du marker (rgba)
+    pedModels = {'g_m_m_mexboss_01', 'g_m_m_mexboss_02', 'g_m_y_mexgang_01', 's_m_m_hairdress_01'}, -- Modèles de PED aléatoires pour la livraison
     blip = {
         sprite = 478,
         color = 2,

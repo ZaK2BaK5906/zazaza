@@ -8,12 +8,12 @@ local missionVehicle = nil
 local deliveryBlip = nil
 local vehicleBlip = nil
 local ped = nil
+local deliveryPed = nil -- PED de livraison
 local policeAlertActive = false
 
 -- Variables d'optimisation
 local sleep = 1000
 local isNearPed = false
-local isNearDelivery = false
 
 print(T.welcome)
 
@@ -375,8 +375,64 @@ function CreateDeliveryPoint()
     SetNewWaypoint(deliveryPoint.x, deliveryPoint.y)
     Debug('GPS activé vers le point de livraison')
 
+    -- Spawner le PED de livraison
+    SpawnDeliveryPed(deliveryPoint)
+
     -- Notification
     Notify(T.gofast_title, '📍 GPS activé ! Livrez la marchandise.', 'info')
+end
+
+function SpawnDeliveryPed(coords)
+    -- Choisir un modèle aléatoire
+    local modelName = Config.Delivery.pedModels[math.random(#Config.Delivery.pedModels)]
+    local model = GetHashKey(modelName)
+
+    Debug('Spawn PED de livraison: ' .. modelName)
+
+    RequestModel(model)
+    local timeout = 0
+    while not HasModelLoaded(model) and timeout < 100 do
+        Wait(100)
+        timeout = timeout + 1
+    end
+
+    if not HasModelLoaded(model) then
+        Debug('ERREUR: Impossible de charger le modèle de PED ' .. modelName)
+        return
+    end
+
+    -- Créer le PED
+    deliveryPed = CreatePed(4, model, coords.x, coords.y, coords.z - 1.0, math.random(0, 360), false, true)
+    SetEntityAsMissionEntity(deliveryPed, true, true)
+    SetBlockingOfNonTemporaryEvents(deliveryPed, true)
+    FreezeEntityPosition(deliveryPed, true)
+    SetEntityInvincible(deliveryPed, true)
+    TaskStartScenarioInPlace(deliveryPed, 'WORLD_HUMAN_STAND_IMPATIENT', 0, true)
+
+    SetModelAsNoLongerNeeded(model)
+
+    Debug('PED de livraison créé avec succès')
+
+    -- Ajouter ox_target
+    exports.ox_target:addLocalEntity(deliveryPed, {
+        {
+            name = 'deliver_gofast',
+            icon = 'fas fa-box',
+            label = '📦 Livrer la marchandise',
+            distance = 2.5,
+            canInteract = function()
+                -- Vérifier que le joueur est dans le bon véhicule
+                local playerPed = PlayerPedId()
+                local vehicle = GetVehiclePedIsIn(playerPed, false)
+                return vehicle == missionVehicle
+            end,
+            onSelect = function()
+                CompleteDelivery()
+            end
+        }
+    })
+
+    Debug('ox_target ajouté sur le PED de livraison')
 end
 
 -- =====================================================
@@ -391,6 +447,14 @@ function CompleteDelivery()
     -- Supprimer le véhicule
     if DoesEntityExist(missionVehicle) then
         ESX.Game.DeleteVehicle(missionVehicle)
+    end
+
+    -- Supprimer le PED de livraison
+    if DoesEntityExist(deliveryPed) then
+        exports.ox_target:removeLocalEntity(deliveryPed, 'deliver_gofast')
+        DeletePed(deliveryPed)
+        deliveryPed = nil
+        Debug('PED de livraison supprimé')
     end
 
     CancelMission()
@@ -410,7 +474,6 @@ function CancelMission()
 
     isOnMission = false
     currentMission = nil
-    isNearDelivery = false
     policeAlertActive = false
 
     if deliveryBlip then
@@ -426,6 +489,14 @@ function CancelMission()
     if DoesEntityExist(missionVehicle) then
         ESX.Game.DeleteVehicle(missionVehicle)
         missionVehicle = nil
+    end
+
+    -- Supprimer le PED de livraison
+    if DoesEntityExist(deliveryPed) then
+        exports.ox_target:removeLocalEntity(deliveryPed, 'deliver_gofast')
+        DeletePed(deliveryPed)
+        deliveryPed = nil
+        Debug('PED de livraison supprimé (annulation)')
     end
 end
 
@@ -495,54 +566,8 @@ CreateThread(function()
     end
 end)
 
--- Thread pour la zone de livraison
-CreateThread(function()
-    while true do
-        sleep = 1000
-
-        if isOnMission and currentMission and currentMission.deliveryLocation then
-            local playerPed = PlayerPedId()
-            local playerCoords = GetEntityCoords(playerPed)
-            local deliveryCoords = currentMission.deliveryLocation
-            local distance = #(playerCoords - deliveryCoords)
-
-            if distance < Config.DrawDistance then
-                sleep = 0
-
-                -- Marker
-                DrawMarker(
-                    Config.Delivery.markerType,
-                    deliveryCoords.x, deliveryCoords.y, deliveryCoords.z - 1.0,
-                    0.0, 0.0, 0.0,
-                    0.0, 0.0, 0.0,
-                    Config.Delivery.markerSize.x, Config.Delivery.markerSize.y, Config.Delivery.markerSize.z,
-                    Config.Delivery.markerColor.r, Config.Delivery.markerColor.g, Config.Delivery.markerColor.b, Config.Delivery.markerColor.a,
-                    false, true, 2, false, nil, nil, false
-                )
-
-                if distance < Config.Delivery.radius then
-                    isNearDelivery = true
-
-                    -- Vérifier si dans le véhicule
-                    local vehicle = GetVehiclePedIsIn(playerPed, false)
-                    if vehicle == missionVehicle then
-                        ShowHelpNotification(T.press_to_deliver)
-
-                        if IsControlJustReleased(0, 38) then -- E
-                            CompleteDelivery()
-                        end
-                    end
-                else
-                    isNearDelivery = false
-                end
-            else
-                isNearDelivery = false
-            end
-        end
-
-        Wait(sleep)
-    end
-end)
+-- La livraison se fait maintenant via ox_target sur le PED de livraison
+-- Plus besoin de DrawMarker ni de touche E
 
 -- =====================================================
 -- INITIALISATION
