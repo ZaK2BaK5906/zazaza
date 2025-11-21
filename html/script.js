@@ -145,6 +145,9 @@ function createMissionCard(mission, index) {
 function selectMission(index, cardElement) {
     if (!isVisible) return;
 
+    // Marquer comme non visible immédiatement pour éviter double clic
+    isVisible = false;
+
     // Effet visuel de sélection
     cardElement.classList.add('selecting');
 
@@ -158,14 +161,17 @@ function selectMission(index, cardElement) {
             'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-            mission: missionsData[index] // Envoyer toutes les données de la mission
+            mission: missionsData[index]
         })
     }).catch(err => console.error('Erreur selectMission:', err));
 
-    // Fermer le menu immédiatement (pas d'attente)
+    // Fermer visuellement le menu SANS callback (NUI focus déjà désactivé)
+    const app = document.getElementById('app');
     setTimeout(() => {
-        closeMenu();
-    }, 200);
+        app.classList.add('hidden');
+        missionsData = [];
+        document.getElementById('drugsGrid').innerHTML = '';
+    }, 100);
 }
 
 // Fonctions utilitaires

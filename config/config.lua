@@ -1,7 +1,7 @@
 Config = {}
 
 -- Configuration générale
-Config.Debug = false -- Mode debug pour afficher les messages de debug
+Config.Debug = true -- Mode debug pour afficher les messages de debug (mettre false en production)
 Config.Language = 'fr' -- Langue (fr ou en)
 
 -- Cooldowns

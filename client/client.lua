@@ -181,7 +181,24 @@ end)
 
 RegisterNetEvent('gofast:startMission')
 AddEventHandler('gofast:startMission', function(missionType, plate)
+    Debug('=== EVENT gofast:startMission REÇU ===')
+
+    if not missionType then
+        Debug('ERREUR: missionType est nil!')
+        return
+    end
+
+    if not plate then
+        Debug('ERREUR: plate est nil!')
+        return
+    end
+
+    Debug('missionType.name: ' .. tostring(missionType.name))
+    Debug('missionType.reward: ' .. tostring(missionType.reward))
+    Debug('plate: ' .. tostring(plate))
+
     if isOnMission then
+        Debug('Le joueur est déjà en mission, abandon')
         return
     end
 
@@ -195,6 +212,7 @@ AddEventHandler('gofast:startMission', function(missionType, plate)
 
     Notify(T.gofast_title, T.mission_started, 'success')
 
+    Debug('Appel de SpawnVehicle...')
     -- Spawn véhicule
     SpawnVehicle(plate)
 end)
@@ -204,25 +222,59 @@ end)
 -- =====================================================
 
 function SpawnVehicle(plate)
-    local model = GetHashKey(Config.Vehicle.models[math.random(#Config.Vehicle.models)])
+    Debug('Début spawn véhicule avec plaque: ' .. plate)
+
+    local modelName = Config.Vehicle.models[math.random(#Config.Vehicle.models)]
+    local model = GetHashKey(modelName)
+
+    Debug('Modèle sélectionné: ' .. modelName .. ' (hash: ' .. model .. ')')
+
     RequestModel(model)
-    while not HasModelLoaded(model) do
+
+    local timeout = 0
+    while not HasModelLoaded(model) and timeout < 100 do
         Wait(100)
+        timeout = timeout + 1
     end
 
+    if not HasModelLoaded(model) then
+        Debug('ERREUR: Impossible de charger le modèle ' .. modelName)
+        Notify(T.gofast_title, 'Erreur: Véhicule introuvable', 'error')
+        CancelMission()
+        return
+    end
+
+    Debug('Modèle chargé avec succès')
+
     local spawnPoint = Config.Vehicle.spawnPoint
+
+    Debug('Point de spawn: ' .. tostring(spawnPoint))
 
     -- Nettoyer la zone
     local vehicle = GetClosestVehicle(spawnPoint.x, spawnPoint.y, spawnPoint.z, 3.0, 0, 71)
     if DoesEntityExist(vehicle) then
+        Debug('Nettoyage véhicule existant')
         ESX.Game.DeleteVehicle(vehicle)
     end
 
+    Debug('Création du véhicule...')
     missionVehicle = CreateVehicle(model, spawnPoint.x, spawnPoint.y, spawnPoint.z, spawnPoint.w, true, false)
+
+    if not DoesEntityExist(missionVehicle) then
+        Debug('ERREUR: Le véhicule n\'a pas été créé')
+        Notify(T.gofast_title, 'Erreur: Impossible de créer le véhicule', 'error')
+        SetModelAsNoLongerNeeded(model)
+        CancelMission()
+        return
+    end
+
+    Debug('Véhicule créé avec succès, ID: ' .. missionVehicle)
+
     SetVehicleNumberPlateText(missionVehicle, plate)
     SetEntityAsMissionEntity(missionVehicle, true, true)
     SetVehicleEngineOn(missionVehicle, false, false, false)
     SetVehicleFuelLevel(missionVehicle, Config.Vehicle.fuel + 0.0)
+    SetModelAsNoLongerNeeded(model)
 
     -- Blip véhicule
     vehicleBlip = AddBlipForEntity(missionVehicle)
