@@ -53,21 +53,13 @@ function openMenu(missions) {
     // Générer les cartes de missions
     generateMissionCards();
 
-    // Animation d'entrée
+    // Animation d'entrée simplifiée
     setTimeout(() => {
         const cards = document.querySelectorAll('.drug-card');
         cards.forEach((card, index) => {
-            setTimeout(() => {
-                card.style.opacity = '0';
-                card.style.transform = 'translateY(20px)';
-                setTimeout(() => {
-                    card.style.transition = 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)';
-                    card.style.opacity = '1';
-                    card.style.transform = 'translateY(0)';
-                }, 10);
-            }, index * 100);
+            card.style.animation = `fadeInUp 0.3s ease-out ${index * 0.05}s both`;
         });
-    }, 100);
+    }, 50);
 }
 
 // Fermer le menu
@@ -77,8 +69,8 @@ function closeMenu() {
     const app = document.getElementById('app');
     const container = document.querySelector('.container');
 
-    // Animation de sortie
-    container.style.animation = 'slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1)';
+    // Animation de sortie rapide
+    container.style.animation = 'slideDown 0.2s ease-in';
 
     setTimeout(() => {
         app.classList.add('hidden');
@@ -96,8 +88,8 @@ function closeMenu() {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({})
-        });
-    }, 300);
+        }).catch(() => {});
+    }, 200);
 }
 
 // Générer les cartes de missions
@@ -151,27 +143,29 @@ function createMissionCard(mission, index) {
 
 // Sélectionner une mission
 function selectMission(index, cardElement) {
+    if (!isVisible) return;
+
     // Effet visuel de sélection
     cardElement.classList.add('selecting');
 
     // Son de sélection (optionnel)
     playSelectSound();
 
-    // Attendre l'animation avant de fermer
+    // Envoyer au serveur IMMÉDIATEMENT
+    fetch(`https://${GetParentResourceName()}/selectMission`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            mission: missionsData[index] // Envoyer toutes les données de la mission
+        })
+    }).catch(err => console.error('Erreur selectMission:', err));
+
+    // Fermer le menu immédiatement (pas d'attente)
     setTimeout(() => {
-        // Envoyer au client avec toutes les données de la mission
-        fetch(`https://${GetParentResourceName()}/selectMission`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                mission: missionsData[index] // Envoyer toutes les données de la mission
-            })
-        }).then(() => {
-            closeMenu();
-        });
-    }, 500);
+        closeMenu();
+    }, 200);
 }
 
 // Fonctions utilitaires
@@ -209,22 +203,6 @@ function playSelectSound() {
     audio.play().catch(() => {});
     */
 }
-
-// Animation CSS supplémentaire pour la fermeture
-const style = document.createElement('style');
-style.textContent = `
-    @keyframes slideDown {
-        from {
-            opacity: 1;
-            transform: translate(-50%, -50%);
-        }
-        to {
-            opacity: 0;
-            transform: translate(-50%, -45%);
-        }
-    }
-`;
-document.head.appendChild(style);
 
 // Debug
 console.log('Script Gofast initialisé');

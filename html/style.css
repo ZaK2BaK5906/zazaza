@@ -22,10 +22,10 @@ body {
     left: 0;
     width: 100vw;
     height: 100vh;
-    background: rgba(0, 0, 0, 0.85);
-    backdrop-filter: blur(10px);
+    background: rgba(0, 0, 0, 0.9);
     z-index: 999;
     animation: fadeIn 0.3s ease;
+    will-change: opacity;
 }
 
 /* Container principal */
@@ -41,7 +41,8 @@ body {
     padding: 30px;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
     z-index: 1000;
-    animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    animation: slideUp 0.3s ease-out;
+    will-change: transform, opacity;
 }
 
 /* Header */
@@ -67,7 +68,6 @@ body {
 
 .logo-icon {
     font-size: 40px;
-    animation: float 3s ease-in-out infinite;
 }
 
 .logo h1 {
@@ -291,16 +291,29 @@ body {
     }
 }
 
-@keyframes float {
-    0%, 100% {
-        transform: translateY(0);
+@keyframes slideDown {
+    from {
+        opacity: 1;
+        transform: translate(-50%, -50%);
     }
-    50% {
-        transform: translateY(-10px);
+    to {
+        opacity: 0;
+        transform: translate(-50%, -45%);
     }
 }
 
-/* Effet de pulsation pour les cartes */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Effet de sélection pour les cartes */
 @keyframes pulse {
     0%, 100% {
         box-shadow: 0 0 0 0 var(--drug-color-alpha);

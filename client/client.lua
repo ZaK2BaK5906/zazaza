@@ -151,15 +151,18 @@ end
 
 -- Callback pour la sélection de mission
 RegisterNUICallback('selectMission', function(data, cb)
-    SetNuiFocus(false, false)
-
     local missionData = data.mission
     if not missionData then
+        Debug('Erreur: Données de mission invalides')
+        SetNuiFocus(false, false)
         cb('error')
         return
     end
 
     Debug('Mission sélectionnée: ' .. missionData.name .. ' - Récompense: $' .. missionData.reward)
+
+    -- IMPORTANT: Désactiver le NUI focus IMMÉDIATEMENT
+    SetNuiFocus(false, false)
 
     -- Envoyer directement au serveur sans demander de quantité
     TriggerServerEvent('gofast:startMission', missionData.name)
