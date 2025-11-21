@@ -353,7 +353,7 @@ function CreateDeliveryPoint()
 
     currentMission.deliveryLocation = deliveryPoint
 
-    Debug('Point de livraison: ' .. tostring(deliveryPoint))
+    Debug('Point de livraison sélectionné: x=' .. deliveryPoint.x .. ', y=' .. deliveryPoint.y)
 
     -- Blip
     deliveryBlip = AddBlipForCoord(deliveryPoint.x, deliveryPoint.y, deliveryPoint.z)
@@ -370,6 +370,13 @@ function CreateDeliveryPoint()
     BeginTextCommandSetBlipName('STRING')
     AddTextComponentString('Point de livraison')
     EndTextCommandSetBlipName(deliveryBlip)
+
+    -- ACTIVER LE GPS AUTOMATIQUEMENT
+    SetNewWaypoint(deliveryPoint.x, deliveryPoint.y)
+    Debug('GPS activé vers le point de livraison')
+
+    -- Notification
+    Notify(T.gofast_title, '📍 GPS activé ! Livrez la marchandise.', 'info')
 end
 
 -- =====================================================
