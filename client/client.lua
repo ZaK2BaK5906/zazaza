@@ -420,12 +420,6 @@ function SpawnDeliveryPed(coords)
             icon = 'fas fa-box',
             label = '📦 Livrer la marchandise',
             distance = 2.5,
-            canInteract = function()
-                -- Vérifier que le joueur est dans le bon véhicule
-                local playerPed = PlayerPedId()
-                local vehicle = GetVehiclePedIsIn(playerPed, false)
-                return vehicle == missionVehicle
-            end,
             onSelect = function()
                 CompleteDelivery()
             end
