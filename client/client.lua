@@ -171,16 +171,13 @@ RegisterNUICallback('selectMission', function(data, cb)
 
     Debug('Mission sélectionnée: ' .. missionData.name .. ' - Récompense: $' .. missionData.reward)
 
-    -- IMPORTANT: Désactiver le NUI focus IMMÉDIATEMENT AVANT de répondre
+    -- Désactiver le NUI focus immédiatement
     Debug('Désactivation NUI Focus...')
     SetNuiFocus(false, false)
     Debug('NUI Focus désactivé')
 
-    -- Répondre au callback AVANT d'envoyer au serveur
+    -- Répondre au callback
     cb('ok')
-
-    -- Petit délai pour s'assurer que le focus est bien désactivé
-    Wait(50)
 
     -- Envoyer au serveur
     Debug('Envoi au serveur...')
