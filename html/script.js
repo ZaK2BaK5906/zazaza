@@ -30,25 +30,50 @@ function setupEventListeners() {
 window.addEventListener('message', (event) => {
     const data = event.data;
 
+    console.log('[NUI] Message reçu:', data);
+
     switch (data.type) {
         case 'openMenu':
+            console.log('[NUI] openMenu appelé avec', data.missions ? data.missions.length : 0, 'missions');
             openMenu(data.missions);
             break;
         case 'closeMenu':
+            console.log('[NUI] closeMenu appelé');
             closeMenu();
             break;
+        default:
+            console.log('[NUI] Type de message inconnu:', data.type);
     }
 });
 
 // Ouvrir le menu
 function openMenu(missions) {
-    if (isVisible) return;
+    console.log('[openMenu] Appelé avec:', missions);
+    console.log('[openMenu] isVisible:', isVisible);
+
+    if (isVisible) {
+        console.log('[openMenu] Menu déjà visible, abandon');
+        return;
+    }
+
+    if (!missions || missions.length === 0) {
+        console.error('[openMenu] Aucune mission reçue!');
+        return;
+    }
 
     missionsData = missions;
     isVisible = true;
 
+    console.log('[openMenu] Affichage du menu avec', missionsData.length, 'missions');
+
     const app = document.getElementById('app');
+    if (!app) {
+        console.error('[openMenu] Element #app introuvable!');
+        return;
+    }
+
     app.classList.remove('hidden');
+    console.log('[openMenu] Menu affiché');
 
     // Générer les cartes de missions
     generateMissionCards();
@@ -56,6 +81,7 @@ function openMenu(missions) {
     // Animation d'entrée simplifiée
     setTimeout(() => {
         const cards = document.querySelectorAll('.drug-card');
+        console.log('[openMenu] Nombre de cartes:', cards.length);
         cards.forEach((card, index) => {
             card.style.animation = `fadeInUp 0.3s ease-out ${index * 0.05}s both`;
         });
@@ -143,7 +169,15 @@ function createMissionCard(mission, index) {
 
 // Sélectionner une mission
 function selectMission(index, cardElement) {
-    if (!isVisible) return;
+    console.log('[selectMission] Mission cliquée, index:', index);
+    console.log('[selectMission] isVisible:', isVisible);
+
+    if (!isVisible) {
+        console.log('[selectMission] Menu non visible, abandon');
+        return;
+    }
+
+    console.log('[selectMission] Mission sélectionnée:', missionsData[index]);
 
     // Marquer comme non visible immédiatement pour éviter double clic
     isVisible = false;
@@ -155,6 +189,7 @@ function selectMission(index, cardElement) {
     playSelectSound();
 
     // Envoyer au serveur IMMÉDIATEMENT
+    console.log('[selectMission] Envoi au serveur...');
     fetch(`https://${GetParentResourceName()}/selectMission`, {
         method: 'POST',
         headers: {
@@ -163,14 +198,20 @@ function selectMission(index, cardElement) {
         body: JSON.stringify({
             mission: missionsData[index]
         })
-    }).catch(err => console.error('Erreur selectMission:', err));
+    }).then(() => {
+        console.log('[selectMission] Envoi réussi');
+    }).catch(err => {
+        console.error('[selectMission] Erreur:', err);
+    });
 
     // Fermer visuellement le menu SANS callback (NUI focus déjà désactivé)
+    console.log('[selectMission] Fermeture visuelle du menu...');
     const app = document.getElementById('app');
     setTimeout(() => {
         app.classList.add('hidden');
         missionsData = [];
         document.getElementById('drugsGrid').innerHTML = '';
+        console.log('[selectMission] Menu fermé');
     }, 100);
 }
 

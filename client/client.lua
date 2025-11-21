@@ -141,12 +141,20 @@ function OpenMissionMenu()
         })
     end
 
+    Debug('Nombre de missions préparées: ' .. #missionsData)
+    Debug('Activation NUI Focus...')
+
     -- Ouvrir l'UI
     SetNuiFocus(true, true)
+
+    Debug('Envoi des données à l\'UI...')
+
     SendNUIMessage({
         type = 'openMenu',
         missions = missionsData
     })
+
+    Debug('Message envoyé à l\'UI')
 end
 
 -- Callback pour la sélection de mission
