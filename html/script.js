@@ -188,7 +188,7 @@ function selectMission(index, cardElement) {
     // Son de sélection (optionnel)
     playSelectSound();
 
-    // Envoyer au serveur IMMÉDIATEMENT
+    // Envoyer au serveur et attendre la réponse
     console.log('[selectMission] Envoi au serveur...');
     fetch(`https://${GetParentResourceName()}/selectMission`, {
         method: 'POST',
@@ -199,20 +199,26 @@ function selectMission(index, cardElement) {
             mission: missionsData[index]
         })
     }).then(() => {
-        console.log('[selectMission] Envoi réussi');
-    }).catch(err => {
-        console.error('[selectMission] Erreur:', err);
-    });
+        console.log('[selectMission] Callback Lua OK - NUI Focus désactivé côté Lua');
 
-    // Fermer visuellement le menu SANS callback (NUI focus déjà désactivé)
-    console.log('[selectMission] Fermeture visuelle du menu...');
-    const app = document.getElementById('app');
-    setTimeout(() => {
+        // Maintenant on peut fermer le menu visuellement
+        console.log('[selectMission] Fermeture visuelle du menu...');
+        const app = document.getElementById('app');
+        setTimeout(() => {
+            app.classList.add('hidden');
+            missionsData = [];
+            document.getElementById('drugsGrid').innerHTML = '';
+            console.log('[selectMission] Menu fermé');
+        }, 150); // Délai augmenté pour être sûr
+
+    }).catch(err => {
+        console.error('[selectMission] Erreur callback:', err);
+        // En cas d'erreur, fermer quand même
+        const app = document.getElementById('app');
         app.classList.add('hidden');
         missionsData = [];
         document.getElementById('drugsGrid').innerHTML = '';
-        console.log('[selectMission] Menu fermé');
-    }, 100);
+    });
 }
 
 // Fonctions utilitaires
