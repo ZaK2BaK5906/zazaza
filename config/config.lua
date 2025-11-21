@@ -10,7 +10,7 @@ Config.PlayerCooldown = 3600 -- 1 heure - Cooldown par joueur (en secondes)
 
 -- Police
 Config.PoliceJobName = 'police' -- Nom du job de police
-Config.MinPolice = 1 -- Nombre minimum de policiers en ligne
+Config.MinPolice = 0 -- Nombre minimum de policiers en ligne
 Config.TimerBeforeAlert = {min = 60, max = 120} -- Timer avant l'alerte police (en secondes)
 Config.PoliceAlertDuration = {min = 120, max = 180} -- Durée de l'alerte police (en secondes)
 Config.PoliceUpdateInterval = 10 -- Intervalle de mise à jour de la position (en secondes)
@@ -19,7 +19,7 @@ Config.PoliceBlipDuration = 5 -- Durée d'affichage du blip (en secondes)
 -- Configuration du PNJ
 Config.Ped = {
     model = 'g_m_m_chemwork_01', -- Modèle du PNJ
-    coords = vector4(1086.514, -2400.004, 30.575, 265.33), -- Position et rotation du PNJ
+    coords = vector4(1072.0420, -2382.7825, 30.5901, 62.1716), -- Position et rotation du PNJ
     scenario = 'WORLD_HUMAN_SMOKING', -- Animation du PNJ
     useOxTarget = true, -- Utiliser ox_target (true) ou markers classiques (false)
     blip = {
@@ -34,7 +34,7 @@ Config.Ped = {
 -- Configuration du véhicule
 Config.Vehicle = {
     models = {'sultan', 'kuruma', 'buffalo', 'rumpo'}, -- Modèles possibles (aléatoire)
-    spawnPoint = vector4(1079.645, -2385.448, 29.997, 359.73), -- Point de spawn du véhicule
+    spawnPoint = vector4(1072.0420, -2382.7825, 30.5901, 62.1716), -- Point de spawn du véhicule
     platePrefix = 'GF', -- Préfixe de la plaque (ex: GF1234)
     fuel = 100 -- Essence du véhicule (si vous utilisez un script de carburant)
 }

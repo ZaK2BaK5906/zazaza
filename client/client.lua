@@ -264,7 +264,6 @@ function SpawnVehicle(plate)
     AddTextComponentString('Véhicule de livraison')
     EndTextCommandSetBlipName(vehicleBlip)
 
-    SetNewWaypoint(spawnPoint.x, spawnPoint.y)
     Notify(T.gofast_title, T.vehicle_ready, 'info')
 
     Debug('Véhicule spawné: ' .. plate)
@@ -275,10 +274,18 @@ function SpawnVehicle(plate)
             Wait(1000)
 
             if IsPedInVehicle(PlayerPedId(), missionVehicle, false) then
+                Debug('Joueur monté dans le véhicule')
+
+                -- Supprimer le blip du véhicule
                 if vehicleBlip then
                     RemoveBlip(vehicleBlip)
                     vehicleBlip = nil
                 end
+
+                -- Créer le point de livraison IMMÉDIATEMENT
+                CreateDeliveryPoint()
+
+                -- Puis lancer le timer pour l'alerte police
                 StartGoFastTimer()
                 break
             end
@@ -333,9 +340,6 @@ function StartGoFastTimer()
             policeAlertActive = false
             TriggerServerEvent('gofast:signalLost')
             Notify(T.gofast_title, T.signal_jammed, 'success')
-
-            -- Créer point de livraison
-            CreateDeliveryPoint()
         end
     end)
 end
