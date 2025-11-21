@@ -121,73 +121,37 @@ function CheckDrugsAndShowMenu()
 end
 
 -- =====================================================
--- UI PERSONNALISÉ
+-- MENU OX_LIB
 -- =====================================================
 
 function OpenMissionMenu()
     Debug('Ouverture du menu des missions')
 
-    -- Préparer les données pour l'UI directement depuis la config
-    local missionsData = {}
+    -- Préparer les options du menu
+    local menuOptions = {}
+
     for i, mission in ipairs(Config.Missions) do
-        table.insert(missionsData, {
-            name = mission.name,
-            label = mission.label,
-            description = mission.description,
-            reward = mission.reward,
-            icon = mission.icon,
-            color = mission.color,
-            difficulty = mission.difficulty
+        table.insert(menuOptions, {
+            title = mission.icon .. ' ' .. mission.label,
+            description = mission.description .. '\n💰 Récompense: $' .. mission.reward .. '\n🎯 Difficulté: ' .. mission.difficulty,
+            icon = 'car',
+            iconColor = mission.color,
+            onSelect = function()
+                Debug('Mission sélectionnée: ' .. mission.name)
+                TriggerServerEvent('gofast:startMission', mission.name)
+            end
         })
     end
 
-    Debug('Nombre de missions préparées: ' .. #missionsData)
-    Debug('Activation NUI Focus...')
-
-    -- Ouvrir l'UI
-    SetNuiFocus(true, true)
-
-    Debug('Envoi des données à l\'UI...')
-
-    SendNUIMessage({
-        type = 'openMenu',
-        missions = missionsData
+    -- Enregistrer et afficher le menu
+    lib.registerContext({
+        id = 'gofast_menu',
+        title = '🚗 ' .. T.gofast_title,
+        options = menuOptions
     })
 
-    Debug('Message envoyé à l\'UI')
+    lib.showContext('gofast_menu')
 end
-
--- Callback pour la sélection de mission
-RegisterNUICallback('selectMission', function(data, cb)
-    Debug('Callback selectMission reçu')
-
-    local missionData = data.mission
-    if not missionData then
-        Debug('Erreur: Données de mission invalides')
-        SetNuiFocus(false, false)
-        cb('error')
-        return
-    end
-
-    Debug('Mission sélectionnée: ' .. missionData.name .. ' - Récompense: $' .. missionData.reward)
-
-    -- Désactiver le NUI focus immédiatement
-    Debug('Désactivation NUI Focus...')
-    SetNuiFocus(false, false)
-    Debug('NUI Focus désactivé')
-
-    -- Répondre au callback
-    cb('ok')
-
-    -- Envoyer au serveur
-    Debug('Envoi au serveur...')
-    TriggerServerEvent('gofast:startMission', missionData.name)
-end)
-
-RegisterNUICallback('closeMenu', function(data, cb)
-    SetNuiFocus(false, false)
-    cb('ok')
-end)
 
 -- =====================================================
 -- DÉMARRAGE DE MISSION

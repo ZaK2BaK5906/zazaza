@@ -20,15 +20,16 @@ server_scripts {
     'server/server.lua'
 }
 
-ui_page 'html/index.html'
+-- UI désactivée, on utilise ox_lib menu natif
+-- ui_page 'html/index.html'
 
-files {
-    'html/index.html',
-    'html/style.css',
-    'html/script.js',
-    'html/assets/*.png',
-    'html/assets/*.jpg'
-}
+-- files {
+--     'html/index.html',
+--     'html/style.css',
+--     'html/script.js',
+--     'html/assets/*.png',
+--     'html/assets/*.jpg'
+-- }
 
 dependencies {
     'es_extended',
