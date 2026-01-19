@@ -121,6 +121,24 @@ Config.NotifyPosition = 'top' -- Position des notifications (top, top-right, top
 Config.DrawDistance = 50.0 -- Distance pour afficher les markers
 Config.InteractDistance = 2.0 -- Distance pour interagir avec le PNJ
 
--- Système d'inventaire
-Config.UseInventoryItems = true -- Mettre les items physiques dans le coffre du véhicule
-Config.Inventory = 'ox_inventory' -- Type d'inventaire (ox_inventory, qb-inventory, qs-inventory, etc.)
+-- Système de props visuels dans le coffre
+Config.UseVisualProps = true -- Afficher des props de drogue dans le coffre (purement visuel)
+
+-- Props pour chaque type de drogue
+Config.DrugProps = {
+    weed = {
+        model = 'prop_weed_01', -- Modèle du prop de weed
+        offset = vector3(0.0, -0.5, 0.3), -- Position dans le coffre
+        rotation = vector3(0.0, 0.0, 90.0)
+    },
+    cocaine = {
+        model = 'prop_cs_cocaine', -- Modèle du prop de cocaïne
+        offset = vector3(0.0, -0.5, 0.3),
+        rotation = vector3(0.0, 0.0, 0.0)
+    },
+    meth = {
+        model = 'prop_meth_bag_01', -- Modèle du prop de meth
+        offset = vector3(0.0, -0.5, 0.3),
+        rotation = vector3(0.0, 0.0, 45.0)
+    }
+}

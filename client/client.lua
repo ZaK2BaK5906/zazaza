@@ -9,6 +9,7 @@ local deliveryBlip = nil
 local vehicleBlip = nil
 local ped = nil
 local policeAlertActive = false
+local drugProp = nil -- Prop de drogue dans le coffre
 
 -- Variables d'optimisation
 local sleep = 1000
@@ -195,6 +196,59 @@ AddEventHandler('gofast:startMission', function(missionType, plate)
 end)
 
 -- =====================================================
+-- SPAWN PROPS DE DROGUE
+-- =====================================================
+
+function SpawnDrugProp(vehicle, propConfig)
+    local propModel = GetHashKey(propConfig.model)
+
+    RequestModel(propModel)
+    local timeout = 0
+    while not HasModelLoaded(propModel) and timeout < 50 do
+        Wait(100)
+        timeout = timeout + 1
+    end
+
+    if not HasModelLoaded(propModel) then
+        Debug('ERREUR: Impossible de charger le modèle de prop ' .. propConfig.model)
+        return
+    end
+
+    -- Créer le prop
+    drugProp = CreateObject(propModel, 0.0, 0.0, 0.0, false, false, false)
+
+    -- Attacher le prop au coffre du véhicule
+    AttachEntityToEntity(
+        drugProp,
+        vehicle,
+        GetEntityBoneIndexByName(vehicle, 'boot'), -- Os du coffre
+        propConfig.offset.x,
+        propConfig.offset.y,
+        propConfig.offset.z,
+        propConfig.rotation.x,
+        propConfig.rotation.y,
+        propConfig.rotation.z,
+        false,
+        false,
+        false,
+        false,
+        2,
+        true
+    )
+
+    SetModelAsNoLongerNeeded(propModel)
+    Debug('Prop de drogue créé et attaché au coffre')
+end
+
+function DeleteDrugProp()
+    if drugProp and DoesEntityExist(drugProp) then
+        DeleteObject(drugProp)
+        drugProp = nil
+        Debug('Prop de drogue supprimé')
+    end
+end
+
+-- =====================================================
 -- SPAWN VÉHICULE
 -- =====================================================
 
@@ -253,16 +307,15 @@ function SpawnVehicle(plate)
     SetVehicleFuelLevel(missionVehicle, Config.Vehicle.fuel + 0.0)
     SetModelAsNoLongerNeeded(model)
 
-    -- Ajouter les items de drogue dans le coffre si activé
-    if Config.UseInventoryItems and currentMission and currentMission.missionType then
+    -- Ajouter un prop visuel de drogue dans le coffre
+    if Config.UseVisualProps and currentMission and currentMission.missionType then
         local missionType = currentMission.missionType
-        Debug('Ajout des items dans le coffre: ' .. missionType.itemLabel .. ' x' .. missionType.quantity)
+        local propConfig = Config.DrugProps[missionType.name]
 
-        -- Attendre un peu pour que le coffre soit initialisé
-        Wait(500)
-
-        -- Ajouter les items au coffre via le serveur
-        TriggerServerEvent('gofast:addItemsToTrunk', plate, missionType.item, missionType.quantity, missionType.itemLabel)
+        if propConfig then
+            Debug('Création du prop visuel: ' .. propConfig.model)
+            SpawnDrugProp(missionVehicle, propConfig)
+        end
     end
 
     -- Blip véhicule
@@ -397,15 +450,11 @@ end
 function CompleteDelivery()
     Debug('Livraison complétée')
 
-    -- Récupérer la plaque du véhicule
-    local plate = nil
-    if DoesEntityExist(missionVehicle) then
-        plate = GetVehicleNumberPlateText(missionVehicle)
-        Debug('Plaque du véhicule: ' .. plate)
-    end
+    -- Envoyer au serveur (pas besoin de plaque sans système d'items)
+    TriggerServerEvent('gofast:completeDelivery')
 
-    -- Envoyer au serveur avec la plaque
-    TriggerServerEvent('gofast:completeDelivery', plate)
+    -- Supprimer le prop de drogue
+    DeleteDrugProp()
 
     -- Supprimer le véhicule
     if DoesEntityExist(missionVehicle) then
@@ -440,6 +489,9 @@ function CancelMission()
         RemoveBlip(vehicleBlip)
         vehicleBlip = nil
     end
+
+    -- Supprimer le prop de drogue
+    DeleteDrugProp()
 
     if DoesEntityExist(missionVehicle) then
         ESX.Game.DeleteVehicle(missionVehicle)
