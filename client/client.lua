@@ -131,9 +131,12 @@ function OpenMissionMenu()
     local menuOptions = {}
 
     for i, mission in ipairs(Config.Missions) do
+        -- Afficher la fourchette de récompense
+        local rewardText = string.format('$%d - $%d', mission.rewardMin, mission.rewardMax)
+
         table.insert(menuOptions, {
             title = mission.icon .. ' ' .. mission.label,
-            description = mission.description .. '\n💰 Récompense: $' .. mission.reward .. '\n🎯 Difficulté: ' .. mission.difficulty,
+            description = mission.description .. '\n💰 Récompense: ' .. rewardText .. '\n🎯 Difficulté: ' .. mission.difficulty,
             icon = 'car',
             iconColor = mission.color,
             onSelect = function()
