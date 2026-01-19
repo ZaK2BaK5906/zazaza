@@ -175,7 +175,8 @@ AddEventHandler('gofast:startMission', function(missionType, plate)
     end
 
     Debug('missionType.name: ' .. tostring(missionType.name))
-    Debug('missionType.reward: ' .. tostring(missionType.reward))
+    Debug('missionType.rewardMin: ' .. tostring(missionType.rewardMin))
+    Debug('missionType.rewardMax: ' .. tostring(missionType.rewardMax))
     Debug('plate: ' .. tostring(plate))
 
     if isOnMission then
@@ -183,7 +184,7 @@ AddEventHandler('gofast:startMission', function(missionType, plate)
         return
     end
 
-    Debug('Mission démarrée: ' .. missionType.name .. ' - Récompense: $' .. missionType.reward)
+    Debug('Mission démarrée: ' .. missionType.name .. ' - Récompense: $' .. missionType.rewardMin .. '-$' .. missionType.rewardMax)
 
     isOnMission = true
     currentMission = {
