@@ -52,12 +52,18 @@ ESX.RegisterServerCallback('gofast:getMinPolice', function(source, cb)
 
     for i = 1, #xPlayers do
         local xPlayer = ESX.GetPlayerFromId(xPlayers[i])
-        if xPlayer and xPlayer.job and xPlayer.job.name == Config.PoliceJobName then
-            policeCount = policeCount + 1
+        if xPlayer and xPlayer.job then
+            -- Vérifier si le job est dans la liste des jobs police
+            for _, policeJob in ipairs(Config.PoliceJobName) do
+                if xPlayer.job.name == policeJob then
+                    policeCount = policeCount + 1
+                    break
+                end
+            end
         end
     end
 
-    Debug('Nombre de policiers en ligne: ' .. policeCount)
+    Debug('Nombre de policiers/sheriffs en ligne: ' .. policeCount)
     cb(policeCount)
 end)
 
@@ -124,16 +130,19 @@ AddEventHandler('gofast:startMission', function(missionName)
     -- Créer la plaque
     local plate = Config.Vehicle.platePrefix .. math.random(1000, 9999)
 
+    -- Calculer la récompense aléatoire entre min et max
+    local reward = math.random(missionType.rewardMin, missionType.rewardMax)
+
     -- Enregistrer la mission
     activeMissions[_source] = {
         missionType = missionType,
-        reward = missionType.reward,
+        reward = reward,
         startTime = os.time(),
         plate = plate
     }
 
     Debug(string.format('Mission démarrée: %s | Mission: %s | Récompense: $%d',
-        xPlayer.getName(), missionType.label, missionType.reward))
+        xPlayer.getName(), missionType.label, reward))
 
     -- Envoyer au client
     TriggerClientEvent('gofast:startMission', _source, missionType, plate)
@@ -145,7 +154,7 @@ end)
 
 -- Event pour compléter une livraison
 RegisterNetEvent('gofast:completeDelivery')
-AddEventHandler('gofast:completeDelivery', function()
+AddEventHandler('gofast:completeDelivery', function(plate)
     local _source = source
     local xPlayer = ESX.GetPlayerFromId(_source)
 
@@ -161,18 +170,55 @@ AddEventHandler('gofast:completeDelivery', function()
     end
 
     local mission = activeMissions[_source]
+    local missionType = mission.missionType
+
+    -- Vérifier si on utilise le système d'items
+    if Config.UseInventoryItems then
+        -- Vérifier si les items sont dans le coffre du véhicule
+        local trunk = exports.ox_inventory:GetInventory('trunk' .. plate)
+
+        if trunk then
+            local hasItem = false
+            for _, item in pairs(trunk.items) do
+                if item.name == missionType.item and item.count >= missionType.quantity then
+                    hasItem = true
+                    -- Retirer les items du coffre
+                    exports.ox_inventory:RemoveItem('trunk' .. plate, missionType.item, missionType.quantity)
+                    Debug('Items retirés du coffre: ' .. missionType.itemLabel .. ' x' .. missionType.quantity)
+                    break
+                end
+            end
+
+            if not hasItem then
+                TriggerClientEvent('ox_lib:notify', _source, {
+                    title = T.gofast_title,
+                    description = '❌ Les items ne sont pas dans le coffre du véhicule !',
+                    type = 'error',
+                    duration = 5000,
+                    position = Config.NotifyPosition
+                })
+                return
+            end
+        end
+    end
 
     -- Donner la récompense
     local reward = mission.reward
-    xPlayer.addMoney(reward)
+
+    if Config.RewardType == 'black_money' then
+        xPlayer.addAccountMoney('black_money', reward)
+    else
+        xPlayer.addMoney(reward)
+    end
 
     -- Log
     local deliveryTime = os.time() - mission.startTime
     local logMessage = string.format(
-        '%s a livré %s pour $%d (temps: %ds)',
+        '%s a livré %s pour $%d (%s) (temps: %ds)',
         xPlayer.getName(),
-        mission.missionType.label,
+        missionType.label,
         reward,
+        Config.RewardType,
         deliveryTime
     )
     print('^2[GOFAST]^7 ' .. logMessage)
@@ -186,7 +232,7 @@ AddEventHandler('gofast:completeDelivery', function()
     Debug('Mission complétée pour: ' .. xPlayer.getName())
 end)
 
--- Event pour alerter la police
+-- Event pour alerter la police/sheriff
 RegisterNetEvent('gofast:alertPolice')
 AddEventHandler('gofast:alertPolice', function()
     local _source = source
@@ -194,21 +240,27 @@ AddEventHandler('gofast:alertPolice', function()
 
     for i = 1, #xPlayers do
         local xPlayer = ESX.GetPlayerFromId(xPlayers[i])
-        if xPlayer and xPlayer.job and xPlayer.job.name == Config.PoliceJobName then
-            TriggerClientEvent('ox_lib:notify', xPlayer.source, {
-                title = T.police_alert_title,
-                description = T.police_alert_description,
-                type = 'inform',
-                duration = 5000,
-                position = Config.NotifyPosition
-            })
+        if xPlayer and xPlayer.job then
+            -- Vérifier si le job est dans la liste des jobs police
+            for _, policeJob in ipairs(Config.PoliceJobName) do
+                if xPlayer.job.name == policeJob then
+                    TriggerClientEvent('ox_lib:notify', xPlayer.source, {
+                        title = T.police_alert_title,
+                        description = T.police_alert_description,
+                        type = 'inform',
+                        duration = 5000,
+                        position = Config.NotifyPosition
+                    })
+                    break
+                end
+            end
         end
     end
 
-    Debug('Alerte police déclenchée par: ' .. _source)
+    Debug('Alerte police/sheriff déclenchée par: ' .. _source)
 end)
 
--- Event pour mettre à jour le blip police
+-- Event pour mettre à jour le blip police/sheriff
 RegisterNetEvent('gofast:updatePoliceBlip')
 AddEventHandler('gofast:updatePoliceBlip', function(coords)
     local _source = source
@@ -216,8 +268,14 @@ AddEventHandler('gofast:updatePoliceBlip', function(coords)
 
     for i = 1, #xPlayers do
         local xPlayer = ESX.GetPlayerFromId(xPlayers[i])
-        if xPlayer and xPlayer.job and xPlayer.job.name == Config.PoliceJobName then
-            TriggerClientEvent('gofast:showPoliceBlip', xPlayer.source, coords)
+        if xPlayer and xPlayer.job then
+            -- Vérifier si le job est dans la liste des jobs police
+            for _, policeJob in ipairs(Config.PoliceJobName) do
+                if xPlayer.job.name == policeJob then
+                    TriggerClientEvent('gofast:showPoliceBlip', xPlayer.source, coords)
+                    break
+                end
+            end
         end
     end
 end)
@@ -230,18 +288,52 @@ AddEventHandler('gofast:signalLost', function()
 
     for i = 1, #xPlayers do
         local xPlayer = ESX.GetPlayerFromId(xPlayers[i])
-        if xPlayer and xPlayer.job and xPlayer.job.name == Config.PoliceJobName then
-            TriggerClientEvent('ox_lib:notify', xPlayer.source, {
-                title = T.police_alert_title,
-                description = T.police_signal_lost,
-                type = 'inform',
-                duration = 5000,
-                position = Config.NotifyPosition
-            })
+        if xPlayer and xPlayer.job then
+            -- Vérifier si le job est dans la liste des jobs police
+            for _, policeJob in ipairs(Config.PoliceJobName) do
+                if xPlayer.job.name == policeJob then
+                    TriggerClientEvent('ox_lib:notify', xPlayer.source, {
+                        title = T.police_alert_title,
+                        description = T.police_signal_lost,
+                        type = 'inform',
+                        duration = 5000,
+                        position = Config.NotifyPosition
+                    })
+                    break
+                end
+            end
         end
     end
 
     Debug('Signal perdu pour: ' .. _source)
+end)
+
+-- Event pour ajouter les items dans le coffre
+RegisterNetEvent('gofast:addItemsToTrunk')
+AddEventHandler('gofast:addItemsToTrunk', function(plate, item, quantity, itemLabel)
+    local _source = source
+
+    if not Config.UseInventoryItems then
+        return
+    end
+
+    -- Ajouter les items au coffre
+    local success = exports.ox_inventory:AddItem('trunk' .. plate, item, quantity)
+
+    if success then
+        Debug(string.format('Items ajoutés au coffre %s: %s x%d', plate, itemLabel, quantity))
+
+        -- Notifier le joueur
+        TriggerClientEvent('ox_lib:notify', _source, {
+            title = '📦 Marchandise chargée',
+            description = string.format('%s x%d ajoutés dans le coffre', itemLabel, quantity),
+            type = 'success',
+            duration = 5000,
+            position = Config.NotifyPosition
+        })
+    else
+        Debug('ERREUR: Impossible d\'ajouter les items au coffre ' .. plate)
+    end
 end)
 
 -- =====================================================

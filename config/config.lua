@@ -1,7 +1,7 @@
 Config = {}
 
 -- Configuration générale
-Config.Debug = true -- Mode debug pour afficher les messages de debug (mettre false en production)
+Config.Debug = false -- Mode debug pour afficher les messages de debug (mettre false en production)
 Config.Language = 'fr' -- Langue (fr ou en)
 
 -- Cooldowns
@@ -9,21 +9,21 @@ Config.GlobalCooldown = 1800 -- 30 minutes - Cooldown global pour tous les joueu
 Config.PlayerCooldown = 3600 -- 1 heure - Cooldown par joueur (en secondes)
 
 -- Police
-Config.PoliceJobName = 'police' -- Nom du job de police
-Config.MinPolice = 0 -- Nombre minimum de policiers en ligne
-Config.TimerBeforeAlert = {min = 60, max = 120} -- Timer avant l'alerte police (en secondes)
-Config.PoliceAlertDuration = {min = 120, max = 180} -- Durée de l'alerte police (en secondes)
-Config.PoliceUpdateInterval = 10 -- Intervalle de mise à jour de la position (en secondes)
+Config.PoliceJobName = { 'police', 'sheriff' } -- Noms des jobs de police/sheriff
+Config.MinPolice = 2 -- Nombre minimum de policiers en ligne
+Config.TimerBeforeAlert = {min = 10, max = 30} -- Timer avant l'alerte police (en secondes)
+Config.PoliceAlertDuration = {min = 90, max = 180} -- Durée de l'alerte police (en secondes)
+Config.PoliceUpdateInterval = 7 -- Intervalle de mise à jour de la position (en secondes)
 Config.PoliceBlipDuration = 5 -- Durée d'affichage du blip (en secondes)
 
 -- Configuration du PNJ
 Config.Ped = {
     model = 'g_m_m_chemwork_01', -- Modèle du PNJ
-    coords = vector4(1072.0420, -2382.7825, 30.5901, 62.1716), -- Position et rotation du PNJ
+    coords = vector4(-1139.98, -2005.75, 13.18, 131.00), -- Position et rotation du PNJ
     scenario = 'WORLD_HUMAN_SMOKING', -- Animation du PNJ
     useOxTarget = true, -- Utiliser ox_target (true) ou markers classiques (false)
     blip = {
-        enabled = true,
+        enabled = false,
         sprite = 501,
         color = 1,
         scale = 0.8,
@@ -34,7 +34,7 @@ Config.Ped = {
 -- Configuration du véhicule
 Config.Vehicle = {
     models = {'sultan', 'kuruma', 'buffalo', 'rumpo'}, -- Modèles possibles (aléatoire)
-    spawnPoint = vector4(1072.0420, -2382.7825, 30.5901, 62.1716), -- Point de spawn du véhicule
+    spawnPoint = vector4(-1154.64, -2003.90, 13.18, 331.00), -- Point de spawn du véhicule
     platePrefix = 'GF', -- Préfixe de la plaque (ex: GF1234)
     fuel = 100 -- Essence du véhicule (si vous utilisez un script de carburant)
 }
@@ -45,7 +45,11 @@ Config.Missions = {
         name = 'weed',
         label = 'Cannabis',
         description = 'Livraison de cannabis. Mission facile, récompense correcte.',
-        reward = 5000, -- Récompense fixe pour cette mission
+        rewardMin = 1000, -- Récompense minimum
+        rewardMax = 3000, -- Récompense maximum
+        item = 'weed_pooch', -- Nom de l'item dans la base de données
+        itemLabel = 'Pochons de Weed',
+        quantity = 50, -- Quantité dans le coffre
         icon = '🌿',
         color = '#2ecc71', -- Couleur pour l'UI
         difficulty = 'Facile'
@@ -54,7 +58,11 @@ Config.Missions = {
         name = 'cocaine',
         label = 'Cocaïne',
         description = 'Livraison de cocaïne. Mission risquée, bonne récompense.',
-        reward = 10000, -- Récompense fixe
+        rewardMin = 3000, -- Récompense minimum
+        rewardMax = 6000, -- Récompense maximum
+        item = 'coke_pooch', -- Nom de l'item dans la base de données
+        itemLabel = 'Pochons de Coke',
+        quantity = 30, -- Quantité dans le coffre
         icon = '❄️',
         color = '#ecf0f1',
         difficulty = 'Moyen'
@@ -63,7 +71,11 @@ Config.Missions = {
         name = 'meth',
         label = 'Méthamphétamine',
         description = 'Livraison de meth. Mission très risquée, haute récompense.',
-        reward = 15000, -- Récompense fixe
+        rewardMin = 6000, -- Récompense minimum
+        rewardMax = 10000, -- Récompense maximum
+        item = 'meth_pooch', -- Nom de l'item dans la base de données
+        itemLabel = 'Pochons de Meth',
+        quantity = 20, -- Quantité dans le coffre
         icon = '💎',
         color = '#3498db',
         difficulty = 'Difficile'
@@ -74,21 +86,21 @@ Config.Missions = {
 Config.DeliveryPoints = {
     vector3(809.005, 2180.060, 52.007),
     vector3(2465.861, 1588.717, 32.720),
-    vector3(1393.35, 3608.43, 38.94),
-    vector3(2434.78, 4969.18, 46.81),
-    vector3(-1108.32, 4937.66, 218.65),
-    vector3(1983.36, 3053.08, 47.22),
-    vector3(-38.31, -1109.85, 26.44),
-    vector3(-1520.14, 851.82, 181.59),
-    vector3(1662.04, 4776.55, 42.01),
-    vector3(-2186.67, 4250.81, 48.17),
-    vector3(715.98, -962.73, 30.40)
+    vector3(1380.85, 3594.11, 33.90),
+    vector3(1382.87, 3604.67, 33.89),
+    vector3(-1124.28, 4930.99, 217.96),
+    vector3(1992.25, 3058.94, 46.06),
+    vector3(-40.10, -1112.25, 25.44),
+    vector3(-1523.74, 855.55, 180.62),
+    vector3(1666.84, 4769.69, 40.94),
+    vector3(-2188.02, 4258.90, 47.62),
+    vector3(721.09, -980.04, 23.13)
 }
 
 -- Configuration de la livraison
 Config.Delivery = {
-    radius = 3.5, -- Rayon pour valider la livraison (en mètres)
-    markerType = 1, -- Type de marker (1 = cylindre, 27 = cercle plat, 25 = checkpoint)
+    radius = 5, -- Rayon pour valider la livraison (en mètres)
+    markerType = 27, -- Type de marker (1 = cylindre, 27 = cercle plat, 25 = checkpoint)
     markerSize = vector3(4.0, 4.0, 0.5), -- Taille du marker (x, y, z)
     markerColor = {r = 52, g = 152, b = 219, a = 120}, -- Couleur bleue douce et discrète (rgba)
     blip = {
@@ -100,7 +112,7 @@ Config.Delivery = {
 }
 
 -- Système de récompense
-Config.RewardType = 'money' -- Type de monnaie (money, black_money, etc.)
+Config.RewardType = 'black_money' -- Type de monnaie (money, black_money, etc.)
 
 -- Notifications ox_lib
 Config.NotifyPosition = 'top' -- Position des notifications (top, top-right, top-left, bottom, bottom-right, bottom-left)
@@ -108,3 +120,7 @@ Config.NotifyPosition = 'top' -- Position des notifications (top, top-right, top
 -- Distance d'interaction (si ox_target désactivé)
 Config.DrawDistance = 50.0 -- Distance pour afficher les markers
 Config.InteractDistance = 2.0 -- Distance pour interagir avec le PNJ
+
+-- Système d'inventaire
+Config.UseInventoryItems = true -- Mettre les items physiques dans le coffre du véhicule
+Config.Inventory = 'ox_inventory' -- Type d'inventaire (ox_inventory, qb-inventory, qs-inventory, etc.)

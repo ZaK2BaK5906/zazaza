@@ -253,6 +253,18 @@ function SpawnVehicle(plate)
     SetVehicleFuelLevel(missionVehicle, Config.Vehicle.fuel + 0.0)
     SetModelAsNoLongerNeeded(model)
 
+    -- Ajouter les items de drogue dans le coffre si activé
+    if Config.UseInventoryItems and currentMission and currentMission.missionType then
+        local missionType = currentMission.missionType
+        Debug('Ajout des items dans le coffre: ' .. missionType.itemLabel .. ' x' .. missionType.quantity)
+
+        -- Attendre un peu pour que le coffre soit initialisé
+        Wait(500)
+
+        -- Ajouter les items au coffre via le serveur
+        TriggerServerEvent('gofast:addItemsToTrunk', plate, missionType.item, missionType.quantity, missionType.itemLabel)
+    end
+
     -- Blip véhicule
     vehicleBlip = AddBlipForEntity(missionVehicle)
     SetBlipSprite(vehicleBlip, 225)
@@ -385,7 +397,15 @@ end
 function CompleteDelivery()
     Debug('Livraison complétée')
 
-    TriggerServerEvent('gofast:completeDelivery')
+    -- Récupérer la plaque du véhicule
+    local plate = nil
+    if DoesEntityExist(missionVehicle) then
+        plate = GetVehicleNumberPlateText(missionVehicle)
+        Debug('Plaque du véhicule: ' .. plate)
+    end
+
+    -- Envoyer au serveur avec la plaque
+    TriggerServerEvent('gofast:completeDelivery', plate)
 
     -- Supprimer le véhicule
     if DoesEntityExist(missionVehicle) then
